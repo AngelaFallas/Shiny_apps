@@ -7,7 +7,8 @@ library(janitor)
 
 datos_empleo_genero <- read_csv("datos/datos_empleo_genero.csv")
 
-ui <- dashboardPage(
+ui <- dashboardPage(skin = "blue",
+
   dashboardHeader(title = "Género y Desempleo en Latinoamérica", titleWidth = 700),
   dashboardSidebar(
     disable = FALSE,
@@ -26,7 +27,8 @@ ui <- dashboardPage(
         tabName = "bienvenida",
         h2("Bienvenida"),
         p("Hola! A continuación pueden encontrar datos relacionados con al desempleo en América Latina"),
-        img(src = "latinoamerica_2.jpg", width = 500, height = 500)
+        img(src = "latinoamerica_2.jpg", width = "100%")
+
       ),
       tabItem(
         tabName = "tabla",
@@ -36,7 +38,10 @@ ui <- dashboardPage(
                     label = "Selecciona las columnas que deseas visualizar en la tabla:", 
                     choices = colnames(datos_empleo_genero),
                     multiple = TRUE),
-        dataTableOutput("tabla_seleccionada")
+        dataTableOutput("tabla_seleccionada"),
+        actionButton(inputId = "mostrar_tabla", label = "Mostrar tabla"),
+        textOutput(outputId = "datos_seleccionados")
+
       ),
       tabItem(
         tabName = "barra_1",
@@ -50,7 +55,9 @@ ui <- dashboardPage(
       ),
       tabItem(
         tabName = "barra_2",
+
         h2("Gráfico: empleo en hombres"),
+
         p("El siguiente gráfico de barras muestra información relacionada con el empleo de hombres en América Latina"),
         selectInput("variable_seleccionada_xg_2", 
                     label = "Selecciona una variable continua:", 
@@ -71,10 +78,22 @@ ui <- dashboardPage(
   )
 )
 
-# Server
+
 server <- function(input, output, session) {
+  
+  datos_filtrados <- reactive({
+    select_cols <- input$columna_seleccionada
+    if (length(select_cols) == 0) {
+      return(NULL)
+    }
+    datos_empleo_genero |> 
+      select(all_of(select_cols))
+  })
+  
   output$tabla_seleccionada <- renderDataTable({
-    datos_empleo_genero[, input$columna_seleccionada, drop = FALSE]
+    req(input$mostrar_tabla)
+    datos_filtrados()
+
   })
   
   output$barra_1 <- renderPlot({
