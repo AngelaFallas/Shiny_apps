@@ -2,9 +2,6 @@ library(shiny)
 library(ggplot2)
 library(shinydashboard)
 library(dplyr)
-library(readxl)
-library(ggplot2)
-library(gapminder)
 library(readr)
 library(janitor)
 
@@ -18,7 +15,8 @@ ui <- dashboardPage(
     sidebarMenu(
       menuItem("Bienvenida", tabName = "bienvenida", icon = icon("person")),
       menuItem("Tabla", tabName = "tabla", icon = icon("th")),
-      menuItem("Gráfico de barras", tabName = "bars", icon = icon("chart-bar")),
+      menuItem("Gráfico de empleabilidad en mujeres", tabName = "barra_1", icon = icon("chart-bar")),
+      menuItem("Gráfico de empleabilidad en hombres", tabName = "barra_2", icon = icon("chart-bar")),
       menuItem("Histograma", tabName = "histograma", icon = icon("chart-bar"))
     )
   ),
@@ -27,8 +25,8 @@ ui <- dashboardPage(
       tabItem(
         tabName = "bienvenida",
         h2("Bienvenida"),
-        p("Hola! A continuación pueden encontrar datos relacionados con al desempleo en América Latína"),
-        img(src = "Latinoamerica", width = 500, height = 500)
+        p("Hola! A continuación pueden encontrar datos relacionados con al desempleo en América Latina"),
+        img(src = "latinoamerica_2.jpg", width = 500, height = 500)
       ),
       tabItem(
         tabName = "tabla",
@@ -41,17 +39,28 @@ ui <- dashboardPage(
         dataTableOutput("tabla_seleccionada")
       ),
       tabItem(
-        tabName = "bars",
-        h2("Gráfico de barras"),
-        selectInput("variable_seleccionada_yg", 
+        tabName = "barra_1",
+        h2("Gráfico: empleo en mujeres"),
+        p("El siguiente gráfico de barras muestra información relacionada con el empleo de mujeres en América Latina"),
+        selectInput("variable_seleccionada_xg", 
+                    label = "Selecciona una variable continua:", 
+                    choices = colnames(datos_empleo_genero),
+                    selected = "Pais"),
+        plotOutput("barra_1")
+      ),
+      tabItem(
+        tabName = "barra_2",
+        h2("Gráfico: empleo en hombres"),
+        p("El siguiente gráfico de barras muestra información relacionada con el empleo de hombres en América Latina"),
+        selectInput("variable_seleccionada_xg_2", 
                     label = "Selecciona una variable continua:", 
                     choices = c(colnames(datos_empleo_genero)),
                     selected = "Pais"),
-        plotOutput("bars1"),
+        plotOutput("barra_2")
       ),
       tabItem(
         tabName = "histograma",
-        h2("Histograma"),
+        h2("Histograma: Conteo de datos sobre empleo en hombres y mujeres"),
         selectInput("variable_seleccionada_xh", 
                     label = "Selecciona una variable continua:", 
                     choices = c(colnames(datos_empleo_genero)),
@@ -68,21 +77,28 @@ server <- function(input, output, session) {
     datos_empleo_genero[, input$columna_seleccionada, drop = FALSE]
   })
   
-  output$bars1 <- renderPlot({
-    ggplot(datos_empleo_genero, aes(y = input$variable_seleccionada_yg, x = pais_region)) +
+  output$barra_1 <- renderPlot({
+    ggplot(datos_empleo_genero, aes(x = get(input$variable_seleccionada_xg), y = pais_region)) +
       geom_bar(stat = "identity", fill = "#0A4B60") +
-      labs(title = "Gráfico de Barras", y = "Empleadoras mujeres", x = "País") +
+      labs(title = "Gráfico: Empleo en Mujeres", x = input$variable_seleccionada_xg , y = "País") +
       theme_classic()
-    
+  })
+  
+  output$barra_2 <- renderPlot({
+    ggplot(datos_empleo_genero, aes(x = get(input$variable_seleccionada_xg_2), y = pais_region)) +
+      geom_bar(stat = "identity", fill = "#0A4B60") +
+      labs(title = "Gráfico: Empleo en Hombres", x = "Empleadores hombres", y = "País") +
+      theme_classic()
   })
   
   output$histograma1 <- renderPlot({
     ggplot(datos_empleo_genero, aes_string(x = input$variable_seleccionada_xh)) + 
       geom_histogram(binwidth = 0.5, fill = "#0A4B60", color = "#f5f5f5", alpha = 0.7) +
-      labs(title = paste("Histograma de", input$variable_seleccionada), 
-           x = input$variable_seleccionada) +
+      labs(title = paste("Histograma de", input$variable_seleccionada_xh), 
+           x = input$variable_seleccionada_xh) +
       theme_classic()
   })
 }
 
 shinyApp(ui, server)
+
